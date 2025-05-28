@@ -1,3 +1,11 @@
+e2e/
+GenerationEval/
+venv/
+dart/
+webnlg_challenge_2017/
+vocab/
+train/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
