@@ -28,7 +28,7 @@ This code was laregly inspired by the way [LoRA](https://github.com/microsoft/Lo
 
 ### Language Generation
 
-This is heavily inspired by [LoRA](https://github.com/microsoft/LoRA/)'s NLG implementation. We refurbish the code for our $\text{LoRMA}_\pi$ and $\text{LoRMA}_+$. To reproduce the results follow the instruction.
+This is heavily inspired by [LoRA](https://github.com/microsoft/LoRA/)'s NLG implementation. We refurbish the code for our $`\text{LoRMA}_\pi`$ and $`\text{LoRMA}_+`$. To reproduce the results follow the instruction.
 
 ```
 cd NLG
@@ -41,7 +41,7 @@ bash download_evalscript.sh
 cd ..
 ```
 
-#### To run E2E on $\texttt{LoRMA}$
+#### To run E2E on $\text{LoRMA}$
 
 **Training**
 
@@ -151,7 +151,7 @@ To replicate results for mathematical reasoning, run the `run_math_lorma.sh` scr
 ./run_math_lorma.sh 8 42 pre rri
 ```
 
-Note that for running an instance of $\text{LoRMA}_+$ the last argument (which is `rank_inflation`) pass `rri` and for $\text{LoRMA}_\pi$ pass `shift`. To change the $\alpha$ parameter, make relevant changes in the bash script itself.
+Note that for running an instance of $`\text{LoRMA}_+`$ the last argument (which is `rank_inflation`) pass `rri` and for $`\text{LoRMA}_\pi`$ pass `shift`. To change the $\alpha$ parameter, make relevant changes in the bash script itself.
 
 
 
