@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+    content="LoRMA is a new technique for PEFT in LLMs that uses multiplicative updates instead of additive updates (as used in LoRA).">
+  <meta name="keywords" content="LoRMA, LoRA, LLM, PEFT">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LoRMA: Low-Rank Multiplicative Adaptation for LLMs</title>
+
+  <!-- For latex -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.png">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+
+<body>
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">
+              Low-Rank Multiplicative Adaptation for LLMs
+              <br>
+              <img src="./static/images/lady-beetle-1.png" style="height: 1em; vertical-align: bottom;">
+            </h1>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://bihany-harsh.github.io">Harsh Bihany</a><sup>*</sup>,</span>
+              <span class="author-block">
+                <a href="https://scholar.google.com/citations?user=aebl730AAAAJ">Shubham Patel</a><sup>*</sup>,</span>
+              <span class="author-block">
+                <a href="https://ashutosh-modi.github.io">Ashutosh Modi</a>
+              </span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">Indian Institute of Technology Kanpur</span>
+              <br>
+              <span class="author-block">{harshbi, devang, ashutoshm}@cse.iitk.ac.in</span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <!-- PDF Link. -->
+                <span class="link-block">
+                  <a href="./static/paper.pdf" class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                    </span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+                <!-- Code Link. -->
+                <span class="link-block">
+                  <a href="https://github.com/Exploration-Lab/LoRMA"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+
+                <div class="is-size-7 has-text-right">
+                  <span class="author-block"><sup>*</sup>Equal Contribution</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section">
+    <div class="container is-max-desktop">
+      <!-- Architecture. -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column">
+          <img src="./static/images/lora-vs-lorma.png" alt="LoRMA architecture compared with LoRA." width="100%">
+        </div>
+      </div>
+      <!--/ Architecture. -->
+
+      <!-- Abstract. -->
+      <div class="columns is-centered">
+        <div class="column">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            Large Language Models have shown remarkable capabilities in the NLP domain.Their effectiveness can mainly be
+            attributed to their ability to adapt to an array of downstream tasks. However, generally, full fine-tuning
+            is a computationally expensive job. To mitigate this, many techniques have been developed that prime
+            efficiency, a prominent one being Low-Rank Adaptation (LoRA). However, LoRA and its variants employ
+            re-parametrized additive updates. In this paper, we propose Low-Rank Multiplicative Adaptation (LoRMA),
+            which shifts the paradigm of additive updates to a richer space of matrix multiplicative transformations. We
+            tackle challenges such as computational complexity and rank bottleneck of matrix multiplication by
+            effectively re-ordering operations and introducing rank inflation strategies. We conduct extensive
+            experiments to demonstrate the effectiveness of our approach in terms of various evaluation metrics.
+          </div>
+        </div>
+      </div>
+      <!--/ Abstract. -->
+
+      <!-- Motivation. -->
+      <div class="columns is-centered">
+        <div class="column">
+          <h2 class="title is-3">Motivation</h2>
+          <div class="content has-text-centered">
+            <img src="./static/images/vector-transformation-1.png" width="40%"
+              alt="achieving additive updates of a vector via multiplcation and rotation">
+          </div>
+          <div class="content has-text-justified">
+            The main idea behind LoRA is to approximate the update matrix \(\Delta \mathbf{W} \in \mathbb{R}^{d
+              \times k}\) by a low-rank approximation \(\frac{\alpha}{r} \cdot \mathbf{B}
+              \mathbf{A}\), where \(\mathbf{B} \in \mathbb{R}^{d \times r}\) and \(\mathbf{A}
+              \in \mathbb{R}^{r \times k}\) are low-rank matrices (\(r \ll d, k\)),
+            \(\frac{\alpha}{r}\) is a scaling factor, leading to the weight update:
+
+            \[\mathbf{W} = \mathbf{W}_0 + \frac{\alpha}{r} \cdot \mathbf{B} \mathbf{A}\]
+
+            The current LoRA-based approaches have employed
+            additive transformations, where the low-rank update matrix
+            can be added to the original weight matrix during inference. However, a similar transformation could also
+            be achieved via multiplicative updates. For example, consider a weight vector \(\mathbf{W}\)
+            (Figure above) and we would like to transform it to vector \(\widehat{\mathbf{W}}\). This
+            could be accomplished via the addition of a vector \(\mathbf{v}\), or it could also be done
+            by rotating \(\mathbf{W}\) by angle \(\theta\) (done via Rotation Matrix
+            \(\mathbf{R_{\theta}}\)) and subsequently by scaling it by scalar \(\alpha\).
+            Inspired by this, we propose Low-Rank Multiplicative Adaptation (LoRMA) for efficiently fine-tuning LLMs
+            on new tasks. LoRMA applies low-rank multiplicative update to a weight matrix:
+
+            \[\mathbf{W} = \frac{\alpha}{r} \cdot (\mathbf{B}\mathbf{A}) \mathbf{W_0}\]
+
+            where \(\frac{\alpha}{r}\) is a scalar and \(\mathbf{B} \in \mathbb{R}^{d \times
+              r}\)
+            and \(\mathbf{A} \in \mathbb{R}^{r \times d}\) are low-rank matrices (\(r \ll d,
+              k\)).
+          </div>
+        </div>
+      </div>
+      <!--/ Motivation. -->
+
+      <!-- Challenges. -->
+      <div class="columns is-centered">
+        <div class="column">
+          <h2 class="title is-3">Challenges</h2>
+          <div class="content has-text-justified">
+            <p></p>The naive approach of \(\mathbf{h} = \left((\mathbf{B} \mathbf{A}) \times \mathbf{W}_0\right)
+              \mathbf{x}\) has a few shortcomings. Utilizing matrix multiplication operations could lead to
+            significant increase in time complexity if not taken care of. Additionally, following is a property of
+            matrix multiplcation which restricts the rank of product of matrices:
+
+            \[\mathcal{R}\left(\mathbf M_1 \times \mathbf M_2\right) \
+              \le \ \min (\mathcal{R}(\mathbf M_1),\mathcal{R}(\mathbf M_2)) \]
+
+            where \(\mathcal{R}(\cdot)\) denotes the rank of a
+            matrix. Due to this the resultant matrix product is limited to be of rank \(r\) since
+            \(\mathcal{R}(\mathbf{BAW}_0) \le \mathcal{R}(\mathbf{B}) \leq r\). This significantly
+            undermines the potential desirable independence of rows/columns in the final
+            representation of the updated weights. Further, during the onset of the fine-tuning, in the case of LoRA, it
+            is preferable to have \(\Delta \mathbf{W} = \mathbf{0}\), so that \(\mathbf{h} =
+              \mathbf{W} \mathbf{x}\). This ensures stability during fine-tuning. This is achieved by
+            initializing \(\mathbf{B}\) with zeros, ensuring that the additive update starts at zero.
+            In our case, this would require the matrix \(\mathbf{BA}\) to be equal to the identity matrix
+            \(\mathbf{I}_d\). However this cannot be the case as \(\mathcal{R}(\mathbf{I}_d) =
+              d\). This forces the tuning to have a significant deviation from the beginning.
+          </div>
+        </div>
+      </div>
+      <!--/ Challenges. -->
+
+      <!-- Methodology -->
+      <div class="columns is-centered">
+        <div class="column">
+          <h2 class="title is-3">Methodology</h2>
+          <div class="content has-text-justified">
+            We propose two strategies to mitigate the rank limitation imposed by low-rank matrices to capture the
+            multiplicative transformation. To tackle time complexity we introduce effective re-ordering of operations
+            which brings down the complexity of LoRMA to be similar of LoRA as elaborated in the paper.
+          </div>
+          <div class="content has-text-justified">
+            <h3>Permutation-Based Inflation (\(\mathcal{I}_{\pi}\))</h3>
+            <div class="content has-text-centered">
+              <img src="./static/images/shift-1.png" alt="Permutation-based rank inflation example" width="30%">
+            </div>
+            Permutation-based rank inflation utilizes the idea of strategic re-arrangement of elements of the matrices
+            to increase the rank of a matrix.
+            The rows of the matrix are rotated cyclically in incremental steps.
+            The \(i\)-th row is rotated by \(i\) (i.e., row 0 by 0, row 1 by 1, and so on).
+            As can be seen in Figure , this effective rearranging of a matrix's
+            elements enhances the matrix's rank from 1 to a full rank of 3.
+            We introduce this operation on the product of the matrices \(\mathbf{BA}\), which equips the model with the
+            ability to learn a higher-rank representation.
+            Since the operation is simply a re-arrangement of the parameters, it does not make the gradient intractable.
+
+            \[\mathbf{h} = \left(\mathcal{I}_{\pi}(\mathbf{BA}) \times \mathbf{W}_0\right) \mathbf{x}\]
+
+            This inflation strategy also provides a better initialization scheme.
+            This is achieved by warranting \(\mathcal{I}_{\pi}(\mathbf{BA}) = \mathbf{I}_d\).
+            The first column of \(\mathbf{B}\) is set to ones, while the rest of the elements are randomly initialized.
+            \(\mathbf{A}[0,0]\) is set to one, while the rest of the elements in \(\mathbf{A}\) are set to zero.
+            We refer to this variant as \(\text{LoRMA}_\pi\).
+          </div>
+          <div class="content has-text-justified">
+            <h3>Additive Rank Inflation (\(\mathcal{I}_{+}\))</h3>
+
+            Motivated by the need for an identity initialization of the transformation matrix, we introduce another
+            technique to address the rank limitation inherent in low-rank approximations.
+            Drawing inspiration from ridge regression, where the solution is stabilized by adding a regularization term
+            \(\hat{\mathbf{\theta}} = (\mathbf{X}^T \mathbf{X} + \lambda \cdot \mathbf{I})^{-1} \mathbf{X}^T
+            \mathbf{Y}\),
+            we incorporate an identity matrix into our formulation through addition.
+            Specifically, the resulting transformation takes the form:
+
+            \[\mathbf{h} = \mathcal{I}_{+}(\mathbf{BA}) \mathbf{W}_0 \mathbf{x}= \left( \frac{\alpha}{r} \cdot
+              \mathbf{BA} + \mathbf{I}_d \right) \mathbf{W}_0 \mathbf{x}\]
+
+            The rank of the sum
+            \(\left( \frac{\alpha}{r} \cdot \mathbf{BA} + \mathbf{I}_d \right)\)
+            (where \(\alpha\) is the scaling factor) is guaranteed to be at least \(d - r\).
+            Since \(r \ll d,\ d - r \approx d\), this preserves sufficient rank flexibility, enabling richer
+            transformations during training.
+            This approach ensures that the transformation begins with identity initialization at the start of the
+            fine-tuning process by setting
+            \(\mathbf{B} = \mathbf{0}\)
+            and randomly initializing \(\mathbf{A}\).
+            We refer to this variant as \(\text{LoRMA}_+\).
+          </div>
+        </div>
+      </div>
+      <!--/ Methodology -->
+
+      <!-- Experimentation -->
+      <div class="columns is-centered">
+        <div class="column">
+          <h2 class="title is-3">Experimentation</h2>
+          <div class="content has-text-justified">
+            We conduct a comprehensive set of experiments across a diverse set of tasks within the domain of Natural
+            Language Understanding and Generation, involving widely used language models with a range of sizes from
+            RoBERTa (base: 125M parameters, large: 355M parameters) and GPT-2 (medium: 355M parameters) to Gemma-2B
+            (2.5B parameters) and Llama3-8B (8B parameters). LoRMA has been evaluated against various baselines,
+            including LoRA and its variants like DoRA and SVFT, and other parameter-efficient fine-tuning strategies
+            like BitFit and Adapters. We also report the full fine-tuning results for comparison. Overall, LoRMA
+            demonstrates competitive performance compared to existing approaches.
+          </div>
+          <div class="content has-text-centered">
+            <img src="./static/images/exp-roberta.png" alt="nlu experiments" width="65%">
+            <br>
+            Experimentation on NLU tasks.
+          </div>
+          <div class="content has-text-centered">
+            <img src="./static/images/exp-gpt.png" alt="nlg experiments for gpt-2 medium" width="45%">
+            <br>
+            Experimentation on NLG tasks for GPT-2 medium.
+          </div>
+          <div class="content has-text-centered">
+            <img src="./static/images/exp-gemma-llama.png" alt="nlg experiments for Gemma-2B and Llama3-8B" width="50%">
+            <br>
+            Experimentation on NLG tasks for Gemma-2B and LlaMA-3-8B.
+          </div>
+          <div class="content has-text-justified">
+            From the outset, our goal was to introduce an alternative efficient fine-tuning technique, and the overall
+            trends and comparisons across a range of experiments demonstrate that our multiplicative adaptation approach
+            achieves competitive performance relative to several other PEFT methods. However, the main advantage of our
+            approach comes from faster convergence and richer parameter space explored by our approach.
+          </div>
+        </div>
+      </div>
+      <!--/ Experimentation -->
+
+      <!-- Ablation -->
+      <div class="columns is-centered">
+        <div class="column">
+          <h2 class="title is-3"> Ablation</h2>
+          <div class="content has-text-justified">
+
+            <h3>Faster Convergence</h3>
+            <p>
+              In the multiplicative representation, on updating a single parameter, the resultant weight matrix has many
+              more updates as compared to additive transformations, as can be seen in the figure below. This
+              can lead to the requirement of fewer updates to modify the weight matrix to another matrix, leading to
+              faster convergence. We observe this empirically in our experiments.
+            </p>
+            <div class="content has-text-centered">
+              <img src="./static/images/large-impact-1.png" width="40%"
+                alt="impact of modifying element in additive vs multiplicative updates.">
+            </div>
+            <p>
+              Convergence time reflects how quickly a model reaches a stable or desirable level of performance during
+              training. To complement the evaluation metrics presented in Table 1, we demonstrate in this section that
+              our proposed techniques achieve faster convergence compared to LoRA. We quantify convergence speed using
+              the <em>Area Under the Curve (AUC)</em> metric for the training loss curve, where a lower AUC indicates
+              faster convergence. The figure illustrates the training loss curves for LoRMA (both \(\mathcal{I}_{+}\)
+              and \(\mathcal{I}_{\pi}\) variants) compared to LoRA on the CoLA task while using the
+              RoBERTa\(_\text{base}\) model. The results show a steeper decline in training loss. The percentage
+              reduction in AUC for various tasks relative to LoRA is summarized in the table. Similar trends were
+              observed for other tasks as well. </p>
+            <div class="content has-text-centered">
+              <img src="./static/images/auc-table.png" width="40%" alt="AUC table">
+              <br>
+              % AUC decrease in comparison with LoRA
+            </div>
+            <div class="content has-text-centered">
+              <img src="./static/images/faster-convergence-loss-curve.png" width="50%"
+                alt="loss curves for LoRA, LoRMA_pi and LoRMA_+">
+            </div>
+
+            <div class="content has-text-justified">
+              <h3>Presence v/s Absence of Rank Inflation</h3>
+              <p>
+                As explained earlier, a naive low-rank multiplicative adaptation of \(\mathbf W_0\) has limitations. We
+                present here the empirical verification of the same, and the results are shown in the below table. The
+                experiments were done on RoBERTa<sub>large</sub> on a subset of GLUE tasks, and all the hyperparameters
+                and training conditions were kept exactly the same, apart from the presence and absence of the rank
+                inflation strategies. Further, we evaluate the effectiveness of the proposed rank inflation strategies
+                by monitoring the rank of matrices throughout the training procedure. We observe that these operations
+                successfully help break the rank bottleneck, and the matrices are almost full rank throughout.
+              </p>
+              <div class="content has-text-centered">
+                <img src="./static/images/absence-rank-inflation.png" width="35%"
+                  alt="presence vs absence of rank inflation">
+                  <br>
+                The absence of rank inflation severely limits the model's capabilities. 
+              </div>
+            </div>
+
+            <div class="content has-text-justified">
+              <h3>Comparison with \(\Delta\mathbf W_\text{LoRA}\)</h3>
+              <p>
+                For any technique, denote \(\Delta \mathbf{W}\) to be the difference between the final adapted weight
+                matrix and the initial weight matrix (the frozen weights).
+                We investigate the relationship of \(\Delta \mathbf{W}_{\text{LoRA}}\) with \(\Delta
+                \mathbf{W}_{\text{LoRMA}_{+}}\) and \(\Delta \mathbf{W}_{\text{LoRMA}_{\pi}}\) as compared to a random
+                matrix.
+                To assess the correlation, we employ a variety of metrics, the results of which are summarized in Table
+                1.
+                We utilize the Frobenius norm \(\left\Vert \cdot \right\Vert_F\) to measure the deviation between the
+                matrices.
+                The cosine similarity of the flattened matrices (\(\texttt{cos}(\cdot, \cdot)\)) and the principal
+                subspace angle \(\Theta_1(\cdot, \cdot)\) between their column spaces have been used to measure their
+                alignment.
+                We compute the sum of squared differences between the top-\(r\) singular values \((\cdot,
+                \cdot)_{\mathcal{S}}^r\) and eigenvalues \((\cdot, \cdot)_{\mathcal{E}}^r\) of the two matrices to
+                assess their similarity.
+              </p>
+              <div class="content has-text-centered">
+                <img src="./static/images/correlation.png" width="80%" alt="correlation between weight-updates">
+                <p>
+                  Correlation between \(\Delta \mathbf{W}_{\text{LoRA}}\) and \(\Delta \mathbf{W}_{\text{LoRMA}}\) for
+                  RoBERTa<sub>large</sub>.
+                  <small>\(\uparrow/\downarrow\) indicates higher/lower is more similar.</small>
+                </p>
+
+              </div>
+              <p>
+                As can be seen in the table above, the main trend points towards a high correlation between \(\Delta
+                \mathbf{W}_{\text{LoRA}}\) and \(\Delta \mathbf{W}_{\text{LoRMA}_{+}}\) and \(\Delta
+                \mathbf{W}_{\text{LoRMA}_{\pi}}\), which shows that our multiplicative techniques can capture updates
+                learned by additive LoRA. Additionally to assess the expressibility of the transformations, we compare
+                the rank of
+                \(\Delta \mathbf{W}\). For LoRA, \(\Delta \mathbf{W} = \mathbf{B} \mathbf{A}\); hence, it is restricted
+                to be a low-rank update. While for LoRMA\(_{\pi}\), there are no such limitations. We empirically
+                observe them to be almost full-rank matrices. </p>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--/ Ablation -->
+
+      <!-- Conclusion. -->
+      <div class="columns is-centered">
+        <div class="column">
+          <h2 class="title is-3">Conclusion</h2>
+          <div class="content has-text-justified">
+            In this work, we proposed LoRMA, a novel approach for updating the weights of a language model via
+            multiplicative updates. We mathematically proved the existence of multiplicative updates. Further, to
+            overcome the limitations of the naive approach of multiplicative updates, we propose two methods to inflate
+            the rank of the update matrix via permutation and additive identity. Extensive experiments demonstrate the
+            competitive performance and training efficacy of the proposed approach. In the future, we plan to experiment
+            with combining LoRMA with existing LoRA-based enhancements like AutoLoRA, DyLoRA, etc.
+          </div>
+        </div>
+      </div>
+      <!--/ Conclusion. -->
+    </div>
+    </div>
+  </section>
+
+
+
+
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>@article{bihany2025lorma,
+  author    = "Bihany, Harsh and Patel, Shubham and Modi, Ashutosh",
+  title     = "LoRMA: Low-Rank Multiplicative Adaptation for LLMs",
+  booktitle = "Findings of the Association for Computational Linguistics: ACL 2025",
+  publisher = "Association for Computational Linguistics",
+  url       = "https://aclanthology.org/2025.findings-acl.527/",
+  year      = "2025"
+}</code></pre>
+    </div>
+  </section>
+
+
+  <footer class="footer">
+    <div class="container">
+      <div class="content has-text-centered">
+        <a class="icon-link" href="./static/paper.pdf">
+          <i class="fas fa-file-pdf"></i>
+        </a>
+        <a class="icon-link" href="https://github.com/Exploration-Lab" class="external-link" disabled>
+          <i class="fab fa-github"></i>
+        </a>
+      </div>
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p>
+              Adapted from <a href="https://github.com/nerfies/nerfies.github.io">webpage</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>
