@@ -153,6 +153,19 @@ To replicate results for mathematical reasoning, run the `run_math_lorma.sh` scr
 
 Note that for running an instance of $`\text{LoRMA}_+`$ the last argument (which is `rank_inflation`) pass `rri` and for $`\text{LoRMA}_\pi`$ pass `shift`. To change the $\alpha$ parameter, make relevant changes in the bash script itself.
 
+## Citation
+```BibTeX
+@inproceedings{bihany-etal-2025-lorma,
+    title = "{L}o{RMA}: Low-Rank Multiplicative Adaptation for {LLM}s",
+    author = "Bihany, Harsh and Patel, Shubham and Modi, Ashutosh",
+    booktitle = "Findings of the Association for Computational Linguistics: ACL 2025",
+    year = "2025",
+    address = "Vienna, Austria",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.findings-acl.527/",
+}
+```
+
 ## License
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 The codebase follows [CC-BY-NC](CC-BY-NC) license. Thus, users can share and adapt our codebase if they give credit to us and do not use our codebase for any commercial purposes.
