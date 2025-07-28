@@ -8,6 +8,10 @@ Large Language Models have emerged to show remarkable capabilities in the NLP do
 
 The figure illustrates the contrast of the technique proposed with LoRA.
 
+## Paper Link
+
+[https://arxiv.org/pdf/2506.07621](https://arxiv.org/pdf/2506.07621)
+
 ## Set up environment
 
 ```
